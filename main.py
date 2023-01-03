@@ -25,8 +25,19 @@ async def on_ready():
         print(e) # maybe error
     
 @bot.hybrid_command(name="say", description="I repeat your words...") # First slash command. Say 
-async def say(ctx, arguments): 
-    await ctx.send(str(arguments)) # I think args returns an array
+async def say(ctx, *, arg): 
+    await ctx.send(arg)
 
+
+@bot.hybrid_command(name="avatar", description="Show any avatar")
+async def avatar(ctx, avatar: discord.Member=None):
+    if avatar == None:
+        await ctx.send(f'Avatar of **{ctx.author}** {ctx.author.display_avatar}')
+    else:
+        await ctx.send(f'Avatar of **{avatar}** {avatar.display_avatar}')
+
+@bot.hybrid_command(name="ping", description="Ping")
+async def ping(ctx):
+    await ctx.send(f'Currently the ping is {round(bot.latency * 1000)}ms')
 
 bot.run(config.token) 
