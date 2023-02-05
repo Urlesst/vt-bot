@@ -1,10 +1,18 @@
 import discord
 from discord.ext import commands 
 import config
+import vt 
 
+client = vt.Client("your api token")
 intents = discord.Intents.all() # Always use intents
 bot = commands.Bot(command_prefix="u!", intents=intents)
 presence = discord.Game('idk') # Bot presence
+
+errorEmbed = discord.Embed(
+    type = 'rich', 
+    colour = 0xED4245, 
+    description = 'An unexpected error has occurred. Please check the link/file and try again later.',
+)
 
 # event
 @bot.event
@@ -18,37 +26,28 @@ async def on_ready():
     except Exception as e:
         print(e) # maybe error
     
-@bot.hybrid_command(name="say", description="I repeat your words...") # First slash command. Say 
-async def say(ctx, *, arg): 
-    await ctx.send(arg)
+@bot.hybrid_command(name="url", description="Scan urls...") # First slash command. Say 
+async def say(ctx, url): 
+    try:
+     url_id = vt.url_id(url)
+     url = await client.get_object("/urls/{}".format(url_id))
+     result = url.last_analysis_stats
+ 
+     embed = discord.Embed(
+        type = 'rich', 
+        colour = 0xED4245,
+        title = f'Results:',
+     )
 
-@bot.hybrid_command(name="avatar", description="Show any avatar")
-async def avatar(ctx, avatar: discord.Member=None):
-    embed = discord.Embed()
-    # In case not of a value
-    if avatar == None:
-        embed.type = 'rich'
-        embed.colour = 0xED4245
-        embed.url = f'https://discord.com/users/{ctx.author.id}'
-        embed.title = f'Avatar of **{ctx.author}**'
-        embed.set_image(url=ctx.author.display_avatar)
-        await ctx.send(embed = embed) # Send embed
-    # Returns a value...
-    else:
-        embed.type = 'rich'
-        embed.colour = 0xED4245
-        embed.url = f'https://discord.com/users/{avatar.id}'
-        embed.title = f'Avatar of **{avatar}**'
-        embed.set_image(url=avatar.display_avatar)
-        await ctx.send(embed = embed)
+     embed.add_field(name='Harmless', value=result['harmless'], inline=True)
+     embed.add_field(name='Malicious', value=result['malicious'], inline=True)
+     embed.add_field(name='Suspicious', value=result['suspicious'], inline=True)
+     embed.add_field(name='Timeout', value=result['timeout'], inline=True)
+     embed.add_field(name='Undetected', value=result['undetected'], inline=True)
+     await ctx.send(embed = embed)
 
-@bot.hybrid_command(name="ping", description="Ping")
-async def ping(ctx):
-    embed = discord.Embed()
-    embed.type = 'rich'
-    embed.colour = 0xFEE75C
-    embed.description = f'Currently the ping is {round(bot.latency * 1000)}ms' 
-    embed.set_footer(text='Ping!', icon_url=None)
-    await ctx.send(embed = embed)
+    except Exception as e:
+        await ctx.send(embed = errorEmbed)
+        print(e)
 
 bot.run(config.token) 
